@@ -3,7 +3,12 @@
 	Boostrapping script ; sets up entire workstation
 .DESCRIPTION
 	Clones essential Git repositories, installs Chocolatey and related
-	packages
+	packages.
+
+	If you'd like to install as a non-admin use -AllowNonAdmin; for speed,
+	you may prefer also adding -NonAdminChocolateyPackages ('git.portable',
+	'vim-tux.portable')
+
 .PARAM AllowNonAdmin
 	Do not quit if not running as an administrator; NOTE that this does NOT
 	force a non-admin install if the command is running as an administrator
@@ -202,7 +207,7 @@ function Maybe-Clone {
 			return $False
 		} Else {
 			important $Message
-			hub clone "$Author/$Repository"
+			git clone "https://github.com/$Author/$Repository.git"
 			$success = $?
 			If(!$success) {
 				error "Failed to clone $Repository"
