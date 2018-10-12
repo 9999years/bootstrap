@@ -1,19 +1,20 @@
 <#
 .SYNOPSIS
-	Boostrapping script ; sets up entire workstation
+Boostrapping script ; sets up entire workstation
+
 .DESCRIPTION
-	Clones essential Git repositories, installs Chocolatey and related
-	packages.
+Clones essential Git repositories, installs Chocolatey and related
+packages.
+If you'd like to install as a non-admin use -AllowNonAdmin; for speed,
+you may prefer also adding -NonAdminChocolateyPackages ('git.portable',
+'vim-tux.portable')
 
-	If you'd like to install as a non-admin use -AllowNonAdmin; for speed,
-	you may prefer also adding -NonAdminChocolateyPackages ('git.portable',
-	'vim-tux.portable')
+.PARAMATER AllowNonAdmin
+Do not quit if not running as an administrator; NOTE that this does NOT
+force a non-admin install if the command is running as an administrator
 
-.PARAM AllowNonAdmin
-	Do not quit if not running as an administrator; NOTE that this does NOT
-	force a non-admin install if the command is running as an administrator
 .LINK
-	https://github.com/9999years/bootstrap
+https://github.com/9999years/bootstrap
 #>
 [CmdletBinding()]
 Param (
@@ -39,7 +40,7 @@ Param (
 		"wget",
 		"winscp.portable"
 	),
-	[Switch]$AllowNonAdmin
+	[Switch]$AllowNonAdmin,
 	[String[]]$NonAdminChocolateyPackages = (
 		"7zip.portable",
 		"ag",
@@ -58,7 +59,7 @@ Param (
 		"sysinternals",
 		"vim-tux.portable",
 		"winscp.portable"
-	),
+	)
 )
 
 # this is invoked at the end
@@ -183,7 +184,7 @@ function error {
 				"$_"
 			}
 		}
-	
+	}
 }
 
 <#
