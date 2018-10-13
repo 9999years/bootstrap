@@ -15,5 +15,10 @@ It’s important to me that this only be one file (because I expect to use this
 on computers which don’t have git installed on) so the utility functions aren’t
 factored out to a separate file for that reason.
 
+## To-Do
+
+* Set environment variables like `$PYTHONSTARTUP`. How do you even do that on
+  Windows?
+
 [AutoHotKey]: https://autohotkey.com/
 [Chocolatey]: https://chocolatey.org/

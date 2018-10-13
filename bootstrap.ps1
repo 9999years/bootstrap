@@ -18,6 +18,7 @@ https://github.com/9999years/bootstrap
 #>
 [CmdletBinding()]
 Param (
+	[Switch]$ForceChocolateyInstall,
 	[String[]]$ChocolateyPackages = (
 		"7zip.install",
 		"ag",
@@ -64,52 +65,72 @@ Param (
 
 # this is invoked at the end
 function bootstrap {
-	important "Installing Chocolatey"
-	$admin = Test-Administrator
-	If(!$admin) {
-		If(!$AllowNonAdmin) {
-			important "Running as non-admin; this seriously limits Chocolatey package choice"
-			important "To continue, re-run this script with the -AllowNonAdmin option"
-			return
+	[CmdletBinding()]
+	Param (
+	)
+
+	Begin {
+		pushd
+	}
+
+	Process {
+		If(Get-Command choco) {
+			important "Chocolatey appears to already be installed; to install anyways rerun with -ForceChocolateyInstall"
 		} Else {
-			important "Installing as non-admin; some packages may fail"
-			Install-Chocolatey -NonAdmin
+			important "Installing Chocolatey"
+			$admin = Test-Administrator
+			If(!$admin) {
+				If(!$AllowNonAdmin) {
+					important "Running as non-admin; this seriously limits Chocolatey package choice"
+					important "To continue, re-run this script with the -AllowNonAdmin option"
+					return
+				} Else {
+					important "Installing as non-admin; some packages may fail"
+					Install-Chocolatey -NonAdmin
+				}
+			} Else {
+				Install-Chocolatey
+			}
 		}
-	} Else {
-		Install-Chocolatey
+
+		important "Installing important Chocolatey packages"
+		choco install $ChocolateyPackages
+		If(!$?) {
+			error "Chocolatey install failed; exiting"
+			return
+		}
+
+		refreshenv
+
+		cd ~
+		If(Maybe-Clone dotfiles "Downloading dotfiles") {
+			important "Setting up dotfiles (~/dotfiles/setup.ps1)"
+			./dotfiles/setup.ps1 -Overwrite Force
+		}
+
+		If(Maybe-Clone vimfiles "Downloading vimfiles") {
+			important "Installing Vim plugins (vim +PlugInstall +qall!)"
+			vim +PlugInstall +qall!
+		}
+
+		cd ~/Documents
+		Maybe-Clone 9999years/ahk "Downloading AHK scripts"
+		If(Maybe-Clone 9999years/WindowsPowerShell "Downloading PowerShell config") {
+			important "Setting up PowerShell environment (./WindowsPowerShell/setup.ps1)"
+			./WindowsPowerShell/setup.ps1
+		}
+
+		"Other choco packages to consider (choco install ...):
+		`tbfg-repo-cleaner cccp cloc discord.install Ghostscript.app
+		gnuwin32-make.portable GoogleChrome graphviz hugo irfanviewplugins jdk8
+		jre8 maven meld miktex.install pandoc pdftk ruby rust soulseek steam
+		strawberryperl telegram.install tixati visualstudio2017buildtools"
+
 	}
 
-	important "Installing important Chocolatey packages"
-	choco install $ChocolateyPackages
-
-	refreshenv
-
-	pushd
-
-	cd ~
-	If(Maybe-Clone dotfiles "Setting up dotfiles (./dotfiles/setup.ps1)") {
-		./dotfiles/setup.ps1 -Overwrite Force
+	End {
+		popd
 	}
-
-	If(Maybe-Clone vimfiles "Setting up Vim") {
-		important "Installing Vim plugins (vim +PlugInstall +qall!)"
-		vim +PlugInstall +qall!
-	}
-
-	cd ~/Documents
-	Maybe-Clone 9999years/ahk "Downloading AHK scripts"
-	If(Maybe-Clone 9999years/WindowsPowerShell "Downloading PowerShell config") {
-		important "Setting up PowerShell environment (./WindowsPowerShell/setup.ps1)"
-		./WindowsPowerShell/setup.ps1
-	}
-
-	"Other choco packages to consider (choco install ...):
-	`tbfg-repo-cleaner cccp cloc discord.install Ghostscript.app
-	gnuwin32-make.portable GoogleChrome graphviz hugo irfanviewplugins jdk8
-	jre8 maven meld miktex.install pandoc pdftk ruby rust soulseek steam
-	strawberryperl telegram.install tixati visualstudio2017buildtools"
-
-	popd
 }
 
 # HELPER FUNCTIONS
@@ -134,12 +155,11 @@ function Get-ColoredText {
 	Begin {
 		$esc = [char]0x1b
 		$reset = "${esc}[0m"
+		$escaped = -join ($Escapes | %{ "${esc}[$($_)m" })
 	}
 
 	Process {
-		return "$(-join ($Escapes | %{
-			"${esc}[$($_)m"
-		}))$Text$reset"
+		return "$escaped$Text$reset"
 	}
 }
 
@@ -157,7 +177,7 @@ function important {
 	Process {
 		$Text | %{
 			If ($Host.UI.SupportsVirtualTerminal) {
-				Get-ColoredText ">>>> $_" (1, 92)
+				Get-ColoredText ">>>> $_" (1, 92) # bold green
 			} Else {
 				"$_"
 			}
@@ -179,7 +199,7 @@ function error {
 	Process {
 		$Text | %{
 			If ($Host.UI.SupportsVirtualTerminal) {
-				Get-ColoredText ">>>> $_" (1, 91)
+				Get-ColoredText ">>>> $_" (1, 91) # bold red
 			} Else {
 				"$_"
 			}
@@ -204,7 +224,7 @@ function Maybe-Clone {
 	)
 
 	Process {
-		If(Test-Directory $Repository) {
+		If(Test-Path $Repository) {
 			return $False
 		} Else {
 			important $Message
@@ -245,8 +265,8 @@ function Install-Chocolatey {
 	)
 
 	If($NonAdmin) {
-		$InstallDir = Path-Join $env:ProgramData "\chocoportable"
-		$env:ChocolateyInstall = "$InstallDir"
+		$env:ChocolateyInstall = Path-Join $env:ProgramData "\chocoportable"
+		important "Installing Chocolatey to ${env:ChocolateyInstall}"
 		Set-ExecutionPolicy Bypass
 	} Else {
 		Set-ExecutionPolicy Bypass -Scope Process -Force
