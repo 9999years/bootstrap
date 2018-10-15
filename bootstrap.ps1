@@ -16,7 +16,7 @@ force a non-admin install if the command is running as an administrator
 .LINK
 https://github.com/9999years/bootstrap
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess = $True)]
 Param (
 	[Switch]$ForceChocolateyInstall,
 	[String[]]$ChocolateyPackages = (
@@ -74,11 +74,11 @@ function bootstrap {
 	}
 
 	Process {
+		$admin = Test-Administrator
 		If(Get-Command choco) {
 			important "Chocolatey appears to already be installed; to install anyways rerun with -ForceChocolateyInstall"
 		} Else {
 			important "Installing Chocolatey"
-			$admin = Test-Administrator
 			If(!$admin) {
 				If(!$AllowNonAdmin) {
 					important "Running as non-admin; this seriously limits Chocolatey package choice"
@@ -93,11 +93,17 @@ function bootstrap {
 			}
 		}
 
-		important "Installing important Chocolatey packages"
-		choco install $ChocolateyPackages
-		If(!$?) {
-			error "Chocolatey install failed; exiting"
-			return
+		If($PSCmdlet.ShouldProcess("Install $ChocolateyPackages", "Install Chocolatey packages", "Install Chocolatey packages?")) {
+			important "Installing important Chocolatey packages"
+			If($admin) {
+				choco install $ChocolateyPackages
+			} Else {
+				choco install $NonAdminChocolateyPackages
+			}
+			If(!$?) {
+				error "Chocolatey install failed; exiting"
+				return
+			}
 		}
 
 		refreshenv
@@ -114,14 +120,14 @@ function bootstrap {
 		}
 
 		cd ~/Documents
-		Maybe-Clone 9999years/ahk "Downloading AHK scripts"
-		If(Maybe-Clone 9999years/WindowsPowerShell "Downloading PowerShell config") {
+		Maybe-Clone ahk "Downloading AHK scripts" | Out-Null
+		If(Maybe-Clone WindowsPowerShell "Downloading PowerShell config") {
 			important "Setting up PowerShell environment (./WindowsPowerShell/setup.ps1)"
 			./WindowsPowerShell/setup.ps1
 		}
 
 		"Other choco packages to consider (choco install ...):
-		`tbfg-repo-cleaner cccp cloc discord.install Ghostscript.app
+		bfg-repo-cleaner cccp cloc discord.install Ghostscript.app
 		gnuwin32-make.portable GoogleChrome graphviz hugo irfanviewplugins jdk8
 		jre8 maven meld miktex.install pandoc pdftk ruby rust soulseek steam
 		strawberryperl telegram.install tixati visualstudio2017buildtools"
@@ -224,9 +230,12 @@ function Maybe-Clone {
 	)
 
 	Process {
+		Write-Verbose "Checking if $(Resolve-Path $Repository) exists"
 		If(Test-Path $Repository) {
+			Write-Verbose "$Repository already exists; skipping"
 			return $False
 		} Else {
+			Write-Verbose "$Repository doesn't exist; cloning"
 			important $Message
 			git clone "https://github.com/$Author/$Repository.git"
 			$success = $?
@@ -259,21 +268,26 @@ function Test-Administrator {
 	https://chocolatey.org/packages?q=id%3Aportable
 #>
 function Install-Chocolatey {
-	[CmdletBinding()]
+	[CmdletBinding(SupportsShouldProcess = $True)]
 	Param (
 		[Switch]$NonAdmin
 	)
 
-	If($NonAdmin) {
-		$env:ChocolateyInstall = Path-Join $env:ProgramData "\chocoportable"
-		important "Installing Chocolatey to ${env:ChocolateyInstall}"
-		Set-ExecutionPolicy Bypass
-	} Else {
-		Set-ExecutionPolicy Bypass -Scope Process -Force
+	Process {
+		If(!$PSCmdlet.ShouldProcess("Install Chocolatey?")) {
+			return
+		}
+		If($NonAdmin) {
+			$env:ChocolateyInstall = Path-Join $env:ProgramData "\chocoportable"
+			important "Installing Chocolatey to ${env:ChocolateyInstall}"
+			Set-ExecutionPolicy Bypass
+		} Else {
+			Set-ExecutionPolicy Bypass -Scope Process -Force
+		}
+		iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+		# don't make us say 'yes' to every package
+		choco feature enable --name allowGlobalConfirmation
 	}
-	iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-	# don't make us say 'yes' to every package
-	choco feature enable --name allowGlobalConfirmation
 }
 
 bootstrap

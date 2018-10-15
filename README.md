@@ -1,5 +1,11 @@
 # `bootstrap.ps1` is a script for “setting up” a computer from scratch
 
+    iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/9999years/bootstrap/master/bootstrap.ps1'))
+
+Or...
+
+    powershell -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/9999years/bootstrap/master/bootstrap.ps1'))"
+
 bootstrap.ps1 installs [Chocolatey], installs a bunch of applications I feel are “critical”, and then clones a bunch of Git repos:
 
 1. My dotfiles (and symlinks them)
