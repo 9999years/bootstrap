@@ -19,28 +19,11 @@ https://github.com/9999years/bootstrap
 [CmdletBinding(SupportsShouldProcess = $True)]
 Param (
 	[Switch]$ForceChocolateyInstall,
-	[String[]]$ChocolateyPackages = (
-		"7zip.install",
-		"ag",
-		"autohotkey.install",
-		"ConEmu",
-		"curl",
-		"Cygwin",
-		"diffutils",
-		"git-credential-manager-for-windows",
-		"git.portable",
-		"greenshot",
-		"hub",
-		"irfanview",
-		"jetbrainstoolbox",
-		"python",
-		"putty.install",
-		"sumatrapdf.install",
-		"sysinternals",
-		"vim-tux.install",
-		"wget",
-		"winscp.portable"
-	),
+
+	[ValidateSet("Tiny", "Normal", "Big", "Huge")]
+	[String]$PackageLevel = "Tiny",
+	[Parameter(Mandatory=$False)]
+	[String[]]$ChocolateyPackages,
 	[Switch]$AllowNonAdmin,
 	[String[]]$NonAdminChocolateyPackages = (
 		"7zip.portable",
@@ -48,19 +31,81 @@ Param (
 		"autohotkey.portable",
 		"ConEmu",
 		"curl",
-		"Cygwin",
 		"diffutils",
 		"git.portable",
-		"greenshot",
 		"hub",
-		"irfanview",
-		"jetbrainstoolbox", # ...?
+		"jetbrainstoolbox",
 		"python",
 		"putty.portable",
-		"sysinternals",
 		"vim-tux.portable",
 		"winscp.portable"
 	)
+)
+
+$packageLevels = (
+	("Tiny", (
+		"7zip.install",
+		"autohotkey.install",
+		"ConEmu",
+		"diffutils",
+		"git-credential-manager-for-windows",
+		"git.portable",
+		"hub",
+		"python",
+		"putty.install",
+		"vim-tux.install",
+		"wget",
+		"winscp.install"
+	)),
+
+	("Normal", (
+		"ag",
+		"curl",
+		"greenshot",
+		"irfanview",
+		"imagemagick.tool",
+		"jetbrainstoolbox",
+		"make"
+	)),
+
+	("Big", (
+		"Cygwin",
+		"bfg-repo-cleaner",
+		"cccp",
+		"discord.install",
+		"Ghostscript.app",
+		"graphviz",
+		"irfanviewplugins",
+		"meld",
+		"microsoft-build-tools",
+		"miktex.install",
+		"pandoc",
+		"pdftk",
+		"steam",
+		"sumatrapdf.install",
+		"sysinternals",
+		"telegram.install"
+	)),
+
+	("Huge", (
+		"cloc",
+		"devcon.portable",
+		"discord",
+		"dotnet4.6.2",
+		"hugo",
+		"jdk8",
+		"jre8",
+		"maven",
+		"mediamonkey",
+		"swissfileknife",
+		"tixati",
+		"vcredist140",
+		"vcredist2010",
+		"vcredist2013",
+		"vcredist2015",
+		"visualstudio2017-installer",
+		"visualstudio2017buildtools"
+	))
 )
 
 # this is invoked at the end
@@ -94,7 +139,21 @@ function bootstrap {
 		}
 
 		If($PSCmdlet.ShouldProcess("Install $ChocolateyPackages", "Install Chocolatey packages", "Install Chocolatey packages?")) {
-			important "Installing important Chocolatey packages"
+			If(!$admin) {
+				important "Installing non-admin Chocolatey packages and ignoring -ChocolateyPackages"
+			} ElseIf($ChocolateyPackages) {
+				important "Package level overriden with package list"
+			} Else {
+				important "Installing Chocolatey packages up to level $PackageLevel"
+				$ChocolateyPackages = New-Object System.Collections.ArrayList
+				ForEach($level in $packageLevels) {
+					$name, $packs = $level
+					$ChocolateyPackages.AddRange($packs)
+					If($name -eq $PackageLevel) {
+						Break
+					}
+				}
+			}
 			If($admin) {
 				choco install $ChocolateyPackages
 			} Else {
@@ -125,12 +184,6 @@ function bootstrap {
 			important "Setting up PowerShell environment (./WindowsPowerShell/setup.ps1)"
 			./WindowsPowerShell/setup.ps1
 		}
-
-		"Other choco packages to consider (choco install ...):
-		bfg-repo-cleaner cccp cloc discord.install Ghostscript.app
-		gnuwin32-make.portable GoogleChrome graphviz hugo irfanviewplugins jdk8
-		jre8 maven meld miktex.install pandoc pdftk ruby rust soulseek steam
-		strawberryperl telegram.install tixati visualstudio2017buildtools"
 
 	}
 
@@ -230,7 +283,7 @@ function Maybe-Clone {
 	)
 
 	Process {
-		Write-Verbose "Checking if $(Resolve-Path $Repository) exists"
+		Write-Verbose "Checking if $(Join-Path (pwd) $Repository) exists"
 		If(Test-Path $Repository) {
 			Write-Verbose "$Repository already exists; skipping"
 			return $False
@@ -252,9 +305,9 @@ function Maybe-Clone {
 	returns True/False if the current user is an administrator
 #>
 function Test-Administrator {
-	[Security.Principal.WindowsPrincipal]::New(
-		[Security.Principal.WindowsIdentity]::GetCurrent()
-	).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+	$user = New-Object Security.Principal.WindowsPrincipal] `
+		([Security.Principal.WindowsIdentity]::GetCurrent())
+	return $user.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
 }
 
 <#
