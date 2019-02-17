@@ -27,8 +27,19 @@ function maybe_clone {
 cd $HOME
 if maybe_clone dotfiles .dotfiles
 then
+	pushd
+	cd .dotfiles
+	if not which abs2rel
+	then
+		echo "Downloading 'abs2rel' locally"
+		curl "https://raw.githubusercontent.com/9999years/abs2rel/master/abs2rel.py" \
+			-O ./abs2rel
+		chmod +x ./abs2rel
+	fi
 	echo "Linking dotfiles ($HOME/dotfiles/setup.sh)"
-	./.dotfiles/setup.sh
+	./setup.sh
+	rm -f ./abs2rel
+	popd
 fi
 if maybe_clone vimfiles .vim
 then
