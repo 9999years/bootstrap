@@ -24,25 +24,32 @@ function maybe_clone {
 	fi
 }
 
-cd $HOME
-if maybe_clone dotfiles .dotfiles
-then
-	pushd
-	cd .dotfiles
-	if not which abs2rel
+function bootstrap {
+	cd $HOME
+	if maybe_clone dotfiles .dotfiles
 	then
-		echo "Downloading 'abs2rel' locally"
-		curl "https://raw.githubusercontent.com/9999years/abs2rel/master/abs2rel.py" \
-			-O ./abs2rel
-		chmod +x ./abs2rel
+		pushd
+		cd .dotfiles
+		if not which abs2rel
+		then
+			echo "Downloading 'abs2rel' locally"
+			curl "https://raw.githubusercontent.com/9999years/abs2rel/master/abs2rel.py" \
+				-O ./abs2rel
+			chmod +x ./abs2rel
+		fi
+		echo "Linking dotfiles ($HOME/dotfiles/setup.sh)"
+		./setup.sh
+		rm -f ./abs2rel
+		popd
 	fi
-	echo "Linking dotfiles ($HOME/dotfiles/setup.sh)"
-	./setup.sh
-	rm -f ./abs2rel
-	popd
-fi
-if maybe_clone vimfiles .vim
-then
-	echo "Installing Vim plugins (vim +PlugInstall +qall!)"
-	vim +PlugInstall +qall!
-fi
+
+	if maybe_clone vimfiles .vim
+	then
+		echo "Installing Vim plugins (vim +PlugInstall +qall!)"
+		vim +PlugInstall +qall!
+	fi
+}
+
+# https://sandstorm.io/news/2015-09-24-is-curl-bash-insecure-pgp-verified-install
+# Wrap the whole script in a function to avoid connection errors
+bootstrap
