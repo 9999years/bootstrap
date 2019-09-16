@@ -45,7 +45,7 @@ $packageLevels = (
 		"steam",
 		"sumatrapdf.install",
 		"sysinternals",
-		"telegram.install"
+		"telegram.install",
 		"tixati",
 		"vcredist140",
 		"vcredist2010",
