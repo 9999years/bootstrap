@@ -21,88 +21,47 @@ Param (
 	[Switch]$ForceChocolateyInstall,
 
 	[ValidateSet("Tiny", "Normal", "Big", "Huge")]
-	[String]$PackageLevel = "Tiny",
+	[String]$PackageLevel = "Normal",
 	[Parameter(Mandatory=$False)]
 	[String[]]$ChocolateyPackages,
-	[Switch]$AllowNonAdmin,
-	[String[]]$NonAdminChocolateyPackages = (
-		"7zip.portable",
-		"ag",
-		"autohotkey.portable",
-		"ConEmu",
-		"curl",
-		"diffutils",
-		"git.portable",
-		"hub",
-		"jetbrainstoolbox",
-		"python",
-		"putty.portable",
-		"vim-tux.portable",
-		"winscp.portable"
-	)
 )
 
 $packageLevels = (
 	("Tiny", (
 		"7zip.install",
 		"autohotkey.install",
-		"ConEmu",
-		"diffutils",
 		"git-credential-manager-for-windows",
 		"git.portable",
-		"hub",
-		"python",
-		"putty.install",
-		"vim-tux.install",
-		"wget",
-		"winscp.install"
+		"greenshot",
+		"irfanview",
 	)),
 
 	("Normal", (
-		"ag",
-		"curl",
-		"greenshot",
-		"irfanview",
 		"imagemagick.tool",
-		"jetbrainstoolbox",
-		"make"
-	)),
-
-	("Big", (
-		"Cygwin",
-		"bfg-repo-cleaner",
 		"cccp",
 		"discord.install",
-		"Ghostscript.app",
-		"graphviz",
 		"irfanviewplugins",
-		"meld",
-		"microsoft-build-tools",
-		"miktex.install",
 		"pandoc",
-		"pdftk",
 		"steam",
 		"sumatrapdf.install",
 		"sysinternals",
 		"telegram.install"
-	)),
-
-	("Huge", (
-		"cloc",
-		"devcon.portable",
-		"discord",
-		"dotnet4.6.2",
-		"hugo",
-		"jdk8",
-		"jre8",
-		"maven",
-		"mediamonkey",
-		"swissfileknife",
 		"tixati",
 		"vcredist140",
 		"vcredist2010",
 		"vcredist2013",
 		"vcredist2015",
+		"dotnet4.6.2",
+	)),
+
+	("Big", (
+		"jetbrainstoolbox",
+		"miktex.install",
+		"mediamonkey",
+		"swissfileknife",
+	)),
+
+	("Huge", (
 		"visualstudio2017-installer",
 		"visualstudio2017buildtools"
 	))
@@ -167,24 +126,9 @@ function bootstrap {
 
 		refreshenv
 
-		cd ~
-		If(Maybe-Clone dotfiles "Downloading dotfiles") {
-			important "Setting up dotfiles (~/dotfiles/setup.ps1)"
-			./dotfiles/setup.ps1 -Overwrite Force
-		}
-
-		If(Maybe-Clone vimfiles "Downloading vimfiles") {
-			important "Installing Vim plugins (vim +PlugInstall +qall!)"
-			vim +PlugInstall +qall!
-		}
-
-		cd ~/Documents
-		Maybe-Clone ahk "Downloading AHK scripts" | Out-Null
-		If(Maybe-Clone WindowsPowerShell "Downloading PowerShell config") {
-			important "Setting up PowerShell environment (./WindowsPowerShell/setup.ps1)"
-			./WindowsPowerShell/setup.ps1
-		}
-
+		important "Enabling WSL (Windows Subsystem for Linux)"
+		Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
+		Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart
 	}
 
 	End {
