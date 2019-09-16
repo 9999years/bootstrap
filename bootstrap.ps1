@@ -33,7 +33,7 @@ $packageLevels = (
 		"git-credential-manager-for-windows",
 		"git.portable",
 		"greenshot",
-		"irfanview",
+		"irfanview"
 	)),
 
 	("Normal", (
@@ -51,14 +51,14 @@ $packageLevels = (
 		"vcredist2010",
 		"vcredist2013",
 		"vcredist2015",
-		"dotnet4.6.2",
+		"dotnet4.6.2"
 	)),
 
 	("Big", (
 		"jetbrainstoolbox",
 		"miktex.install",
 		"mediamonkey",
-		"swissfileknife",
+		"swissfileknife"
 	)),
 
 	("Huge", (
