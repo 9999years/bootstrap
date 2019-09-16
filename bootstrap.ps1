@@ -23,7 +23,7 @@ Param (
 	[ValidateSet("Tiny", "Normal", "Big", "Huge")]
 	[String]$PackageLevel = "Normal",
 	[Parameter(Mandatory=$False)]
-	[String[]]$ChocolateyPackages,
+	[String[]]$ChocolateyPackages
 )
 
 $packageLevels = (
